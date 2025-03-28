@@ -1,0 +1,89 @@
+  <h2 class="text-2xl font-bold mb-6 text-gray-800">📊 Reporte de Horas Trabajadas</h2>
+
+  <!-- 🔹 Nuevo Grid con Tamaños Personalizados -->
+  <div class="grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-[1fr_1fr_2fr_1fr_auto] gap-4 mb-6">
+    <!-- 📅 Fecha Inicio (Pequeño) -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">📅 Fecha Inicio</label>
+      <input type="date" [(ngModel)]="fechaInicio"
+        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
+    </div>
+
+    <!-- 📅 Fecha Fin (Pequeño) -->
+    <div>
+      <label class="block text-gray-700 font-medium mb-1">📅 Fecha Fin</label>
+      <input type="date" [(ngModel)]="fechaFin"
+        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
+    </div>
+
+    <!-- 👤 Select de Colaboradores (Más Grande) -->
+    <div class="lg:col-span-2">
+      <label class="block text-gray-700 font-medium mb-1">👤 Seleccionar Colaboradores</label>
+      <ng-select [items]="colaboradores" bindLabel="nombre" bindValue="id"
+        [(ngModel)]="colaboradoresSeleccionados" [closeOnSelect]="false"
+        [multiple]="true" [clearable]="true" placeholder="Selecciona colaboradores"
+        class="w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition">
+
+        <ng-template ng-option-tmp let-item="item">
+          <div class="flex items-center">
+            <input type="checkbox" [checked]="colaboradoresSeleccionados.includes(item.id)"
+              (change)="toggleSelection(item.id)"
+              class="mr-2 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+            <span class="custom-option">{{ item.nombre }} {{ item.apellido }}</span>
+          </div>
+        </ng-template>
+
+      </ng-select>
+    </div>
+
+    <!-- 🔍 Botón de Búsqueda (Ajuste Automático) -->
+    <div class="flex items-end">
+      <button (click)="obtenerHorasTrabajadas()"
+        class="w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition transform hover:scale-105">
+        🔍 Buscar
+      </button>
+    </div>
+  </div>
+
+
+<!-- Tabla de Resultados -->
+<div *ngIf="reportes.length > 0" class="overflow-x-auto">
+  <table class="w-full bg-white shadow-lg rounded-xl overflow-hidden">
+    <thead class="bg-indigo-600 text-white">
+      <tr>
+        <th class="px-4 py-3 border">Colaborador</th>
+        <th class="px-4 py-3 border">DNI</th>
+        <th class="px-4 py-3 border">Empresa</th>
+        <th class="px-4 py-3 border">Tienda</th>
+        <th class="px-4 py-3 border">Fecha</th>
+        <th class="px-4 py-3 border">Ingreso</th>
+        <th class="px-4 py-3 border">Salida</th>
+        <th class="px-4 py-3 border">SubTotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let reporte of reportes" class="text-gray-700 even:bg-gray-50">
+        <td class="px-4 py-3 border">{{ reporte.nombreColaborador }} {{ reporte.apellido }}</td>
+        <td class="px-4 py-3 border">{{ reporte.dniColaborador }}</td>
+        <td class="px-4 py-3 border">{{ reporte.nombreEmpresa }}</td>
+        <td class="px-4 py-3 border font-bold">{{ obtenerNumerosDeTienda(reporte.nombreTienda) }}</td>
+        <td class="px-4 py-3 border">{{ reporte.fecha }}</td>
+        <td class="px-4 py-3 border">{{ formatearHora(reporte.horaEntrada) }}</td>
+        <td class="px-4 py-3 border">{{ formatearHora(reporte.horaSalida) }}</td>
+        <td class="px-4 py-3 border font-bold text-indigo-600">{{ formatearHora(reporte.horasTrabajadas) }}</td>
+      </tr>
+    </tbody>
+
+    <!-- 🔽 Pie de Tabla: Total de Horas -->
+    <tfoot>
+      <tr class="bg-gray-100 font-bold">
+        <td colspan="7" class="px-4 py-3 border text-right">Total Horas Trabajadas:</td>
+        <td class="px-4 py-3 border text-indigo-600">{{ calcularTotalHoras() }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<!-- Mensaje si no hay resultados -->
+<p *ngIf="reportes.length === 0" class="text-gray-500 mt-6 text-center h-1/2 flex items-center justify-center">⚠️ No hay datos disponibles para este rango de
+  fechas.</p>

@@ -1,0 +1,26 @@
+# Excluir directorios y archivos generados
+target
+node_modules
+.git
+build
+dist
+nbbuild
+nbdist
+.nb-gradle
+
+# Archivos de configuración de IDEs
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+.apt_generated
+
+# Mantener archivos esenciales de Maven
+!.mvn/wrapper/maven-wrapper.jar
