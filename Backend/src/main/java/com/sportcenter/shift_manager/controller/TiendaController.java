@@ -18,32 +18,35 @@ public class TiendaController {
     }
 
     @PostMapping
-    public ResponseEntity<TiendaDTO> createTienda(@Valid @RequestBody TiendaDTO tiendaDTO) {
-        TiendaDTO savedTienda = tiendaService.saveTienda(tiendaDTO);
+    public ResponseEntity<TiendaDTO> createTienda(@Valid @RequestBody TiendaDTO tiendaDTO,
+                                                  @RequestHeader("Authorization") String token) {
+        TiendaDTO savedTienda = tiendaService.saveTienda(tiendaDTO, token);
         return ResponseEntity.ok(savedTienda);
     }
 
     @GetMapping
-    public ResponseEntity<List<TiendaDTO>> getAllTiendas() {
-        List<TiendaDTO> tiendas = tiendaService.getAllTiendas();
+    public ResponseEntity<List<TiendaDTO>> getAllTiendas(@RequestHeader("Authorization") String token) {
+        List<TiendaDTO> tiendas = tiendaService.getAllTiendas(token);
         return ResponseEntity.ok(tiendas);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TiendaDTO> getTiendaById(@PathVariable Long id) {
-        TiendaDTO tienda = tiendaService.getTiendaById(id);
+    public ResponseEntity<TiendaDTO> getTiendaById(@PathVariable Long id,
+                                                   @RequestHeader("Authorization") String token) {
+        TiendaDTO tienda = tiendaService.getTiendaById(id, token);
         return ResponseEntity.ok(tienda);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TiendaDTO> updateTienda(@PathVariable Long id, @Valid @RequestBody TiendaDTO tiendaDTO) {
-        TiendaDTO updatedTienda = tiendaService.updateTienda(id, tiendaDTO);
+    public ResponseEntity<TiendaDTO> updateTienda(@PathVariable Long id, @Valid @RequestBody TiendaDTO tiendaDTO,
+                                                  @RequestHeader("Authorization") String token) {
+        TiendaDTO updatedTienda = tiendaService.updateTienda(id, tiendaDTO, token);
         return ResponseEntity.ok(updatedTienda);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTienda(@PathVariable Long id) {
-        tiendaService.deleteTienda(id);
+    public ResponseEntity<Void> deleteTienda(@PathVariable Long id, @RequestHeader("Authorization") String token) {
+        tiendaService.deleteTienda(id, token);
         return ResponseEntity.noContent().build();
     }
 }

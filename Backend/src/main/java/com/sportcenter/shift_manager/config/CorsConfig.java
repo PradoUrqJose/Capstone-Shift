@@ -8,10 +8,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        System.out.println("📢 Configurando CORS para /api/**");
         registry.addMapping("/api/**")
                 .allowedOrigins(
-                        "http://localhost:4200", // Desarrollo con ng serve
-                        "http://localhost:5000", // Desarrollo con serve
+                        "http://localhost:4200",
+                        "http://localhost:5000",
                         "https://sportcenter-turnos.vercel.app"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")

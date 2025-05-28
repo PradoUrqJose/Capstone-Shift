@@ -19,5 +19,10 @@ public class Puesto {
     private String nombre;
 
     @Column(length = 255)
-    private String descripcion; // Opcional, para más detalles sobre el puesto
+    private String descripcion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Usuario usuario;
 }

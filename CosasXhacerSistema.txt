@@ -1,0 +1,4 @@
+- Login del proyecto
+- Subir colaboradores desde una tabla de excel
+- Notificaciones al email del colaborador, cada vez que se agende un turno o se de por terminada la semnaa (si se puede enviar al whatsapp mejor
+)

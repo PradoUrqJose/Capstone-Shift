@@ -2,7 +2,6 @@ package com.sportcenter.shift_manager.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
@@ -37,5 +36,10 @@ public class Empresa {
     }
 
     @Column(nullable = false)
-    private boolean habilitada = true; // Nueva propiedad
+    private boolean habilitada = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Usuario usuario;
 }

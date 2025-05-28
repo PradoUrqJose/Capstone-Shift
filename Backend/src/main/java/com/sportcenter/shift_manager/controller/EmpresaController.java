@@ -19,41 +19,46 @@ public class EmpresaController {
     }
 
     @PostMapping
-    public ResponseEntity<EmpresaDTO> saveEmpresa(@Valid @RequestBody Empresa empresa) {
-        Empresa savedEmpresa = empresaService.saveEmpresa(empresa);
+    public ResponseEntity<EmpresaDTO> saveEmpresa(@Valid @RequestBody Empresa empresa,
+                                                  @RequestHeader("Authorization") String token) {
+        Empresa savedEmpresa = empresaService.saveEmpresa(empresa, token);
         return ResponseEntity.ok(empresaService.convertToDTO(savedEmpresa));
     }
 
     @GetMapping
-    public ResponseEntity<List<EmpresaDTO>> getAllEmpresas() {
-        return ResponseEntity.ok(empresaService.getAllEmpresas());
+    public ResponseEntity<List<EmpresaDTO>> getAllEmpresas(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(empresaService.getAllEmpresas(token));
     }
 
     @GetMapping("/{id}/numero-empleados")
-    public ResponseEntity<Integer> getNumeroDeEmpleados(@PathVariable Long id) {
-        return ResponseEntity.ok(empresaService.getNumeroDeEmpleados(id));
+    public ResponseEntity<Integer> getNumeroDeEmpleados(@PathVariable Long id,
+                                                        @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(empresaService.getNumeroDeEmpleados(id, token));
     }
 
     @GetMapping("/filtro")
-    public ResponseEntity<List<EmpresaDTO>> getEmpresasPorHabilitacion(@RequestParam boolean habilitada) {
-        return ResponseEntity.ok(empresaService.getEmpresasPorHabilitacion(habilitada));
+    public ResponseEntity<List<EmpresaDTO>> getEmpresasPorHabilitacion(@RequestParam boolean habilitada,
+                                                                       @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(empresaService.getEmpresasPorHabilitacion(habilitada, token));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EmpresaDTO> updateEmpresa(@PathVariable Long id, @Valid @RequestBody Empresa empresaDetails) {
-        Empresa updatedEmpresa = empresaService.updateEmpresa(id, empresaDetails);
+    public ResponseEntity<EmpresaDTO> updateEmpresa(@PathVariable Long id, @Valid @RequestBody Empresa empresaDetails,
+                                                    @RequestHeader("Authorization") String token) {
+        Empresa updatedEmpresa = empresaService.updateEmpresa(id, empresaDetails, token);
         return ResponseEntity.ok(empresaService.convertToDTO(updatedEmpresa));
     }
 
     @PutMapping("/{id}/habilitacion")
-    public ResponseEntity<EmpresaDTO> toggleHabilitacionEmpresa(@PathVariable Long id, @RequestParam boolean habilitada) {
-        Empresa toggledEmpresa = empresaService.toggleHabilitacionEmpresa(id, habilitada);
+    public ResponseEntity<EmpresaDTO> toggleHabilitacionEmpresa(@PathVariable Long id, @RequestParam boolean habilitada,
+                                                                @RequestHeader("Authorization") String token) {
+        Empresa toggledEmpresa = empresaService.toggleHabilitacionEmpresa(id, habilitada, token);
         return ResponseEntity.ok(empresaService.convertToDTO(toggledEmpresa));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmpresa(@PathVariable Long id) {
-        empresaService.deleteEmpresa(id);
+    public ResponseEntity<Void> deleteEmpresa(@PathVariable Long id, @RequestHeader("Authorization") String token) {
+        empresaService.deleteEmpresa(id, token);
         return ResponseEntity.noContent().build();
     }
 }

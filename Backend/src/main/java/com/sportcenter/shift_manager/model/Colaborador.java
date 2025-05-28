@@ -40,10 +40,9 @@ public class Colaborador {
     private String telefono;
 
     @Column(unique = true, nullable = true, length = 100)
-    private String email;    // Nuevo campo
+    private String email;
 
-    //@Column(length = 255)
-    private String fotoUrl;  // Nuevo campo
+    private String fotoUrl;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "empresa_id", nullable = true)
@@ -51,13 +50,18 @@ public class Colaborador {
     private Empresa empresa;
 
     @Column(nullable = false)
-    private boolean habilitado = true; // Nueva propiedad
+    private boolean habilitado = true;
 
     @Column(nullable = true)
     private LocalDate fechaNacimiento;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "puesto_id")
-    @JsonIgnoreProperties("colaboradores") // Si Puesto tiene relación inversa
+    @JsonIgnoreProperties("colaboradores")
     private Puesto puesto;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Usuario usuario;
 }

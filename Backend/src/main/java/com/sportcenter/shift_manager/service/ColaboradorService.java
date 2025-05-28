@@ -1,13 +1,16 @@
 package com.sportcenter.shift_manager.service;
 
+import com.sportcenter.shift_manager.config.JwtUtil;
 import com.sportcenter.shift_manager.dto.ColaboradorDTO;
 import com.sportcenter.shift_manager.exception.ResourceNotFoundException;
 import com.sportcenter.shift_manager.model.Colaborador;
 import com.sportcenter.shift_manager.model.Empresa;
 import com.sportcenter.shift_manager.model.Puesto;
+import com.sportcenter.shift_manager.model.Usuario;
 import com.sportcenter.shift_manager.repository.ColaboradorRepository;
 import com.sportcenter.shift_manager.repository.EmpresaRepository;
 import com.sportcenter.shift_manager.repository.PuestoRepository;
+import com.sportcenter.shift_manager.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,33 +24,57 @@ public class ColaboradorService {
     private final ColaboradorRepository colaboradorRepository;
     private final EmpresaRepository empresaRepository;
     private final CloudinaryService cloudinaryService;
-    private final PuestoRepository puestoRepository; // Nuevo repositorio
+    private final PuestoRepository puestoRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final JwtUtil jwtUtil;
 
-    public ColaboradorService(ColaboradorRepository colaboradorRepository, EmpresaRepository empresaRepository, CloudinaryService cloudinaryService, PuestoRepository puestoRepository) {
+    public ColaboradorService(ColaboradorRepository colaboradorRepository, EmpresaRepository empresaRepository,
+                              CloudinaryService cloudinaryService, PuestoRepository puestoRepository,
+                              UsuarioRepository usuarioRepository, JwtUtil jwtUtil) {
         this.colaboradorRepository = colaboradorRepository;
         this.empresaRepository = empresaRepository;
         this.cloudinaryService = cloudinaryService;
         this.puestoRepository = puestoRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.jwtUtil = jwtUtil;
     }
 
-    // Guardar un nuevo colaborador
+    private String getUsernameFromToken(String token) {
+        return jwtUtil.extractUsername(token.replace("Bearer ", ""));
+    }
+
+    private Usuario getUsuarioFromToken(String token) {
+        String username = getUsernameFromToken(token);
+        Usuario usuario = usuarioRepository.findByUsername(username);
+        if (usuario == null) {
+            throw new ResourceNotFoundException("Usuario no encontrado: " + username);
+        }
+        return usuario;
+    }
+
     @Transactional
-    public Colaborador saveColaborador(ColaboradorDTO colaboradorDTO, MultipartFile file) throws IOException {
+    public Colaborador saveColaborador(ColaboradorDTO colaboradorDTO, MultipartFile file, String token) throws IOException {
+        Usuario usuario = getUsuarioFromToken(token);
+
         // Validar existencia de empresa
         Empresa empresa = empresaRepository.findById(colaboradorDTO.getEmpresaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa con ID " + colaboradorDTO.getEmpresaId() + " no encontrada"));
+        if (!empresa.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para asignar esta empresa");
+        }
 
         // Validar duplicados de email, DNI y Nombre + Apellido
-        if (colaboradorDTO.getEmail() != null && colaboradorRepository.findByEmail(colaboradorDTO.getEmail()).isPresent()) {
+        if (colaboradorDTO.getEmail() != null && colaboradorRepository.findByUsuarioAndEmail(usuario, colaboradorDTO.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un colaborador con el email: " + colaboradorDTO.getEmail());
         }
-        if (colaboradorRepository.findByDni(colaboradorDTO.getDni()).isPresent()) {
+        if (colaboradorRepository.findByUsuarioAndDni(usuario, colaboradorDTO.getDni()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un colaborador con el DNI: " + colaboradorDTO.getDni());
         }
-        if (colaboradorRepository.findByNombreAndApellido(colaboradorDTO.getNombre(), colaboradorDTO.getApellido()).isPresent()) {
+        if (colaboradorRepository.findByUsuarioAndNombreAndApellido(usuario, colaboradorDTO.getNombre(), colaboradorDTO.getApellido()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un colaborador con el nombre y apellido: "
                     + colaboradorDTO.getNombre() + " " + colaboradorDTO.getApellido());
         }
+
         // Crear nuevo colaborador
         Colaborador colaborador = new Colaborador();
         colaborador.setNombre(colaboradorDTO.getNombre());
@@ -57,13 +84,16 @@ public class ColaboradorService {
         colaborador.setEmail(colaboradorDTO.getEmail());
         colaborador.setHabilitado(colaboradorDTO.isHabilitado());
         colaborador.setEmpresa(empresa);
-        // Nuevos atributos
         colaborador.setFechaNacimiento(colaboradorDTO.getFechaNacimiento());
+        colaborador.setUsuario(usuario);
 
         // Asignar puesto si se proporciona puestoId
         if (colaboradorDTO.getPuestoId() != null) {
             Puesto puesto = puestoRepository.findById(colaboradorDTO.getPuestoId())
-                    .orElseThrow(() -> new RuntimeException("Puesto con ID " + colaboradorDTO.getPuestoId() + " no encontrado"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Puesto con ID " + colaboradorDTO.getPuestoId() + " no encontrado"));
+            if (!puesto.getUsuario().getId().equals(usuario.getId())) {
+                throw new ResourceNotFoundException("No tienes permiso para asignar este puesto");
+            }
             colaborador.setPuesto(puesto);
         }
 
@@ -77,69 +107,81 @@ public class ColaboradorService {
         return colaboradorRepository.save(colaborador);
     }
 
-    // Método para validar la imagen (sin cambios)
     private void validarImagen(MultipartFile file) {
         if (file.getSize() > 1048576) { // 1 MB
             throw new RuntimeException("La foto debe ser menor a 1 MB");
         }
-
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new IllegalArgumentException("Solo se permiten archivos de imagen.");
         }
     }
 
-    // Obtener todos los colaboradores (sin cambios en la lógica, solo en el DTO)
-    public List<ColaboradorDTO> getAllColaboradores() {
-        return colaboradorRepository.findAll().stream()
+    public List<ColaboradorDTO> getAllColaboradores(String token) {
+        Usuario usuario = getUsuarioFromToken(token);
+        return colaboradorRepository.findByUsuario(usuario)
+                .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    // Obtener colaboradores por empresa (sin cambios en la lógica, solo en el DTO)
-    public List<ColaboradorDTO> getColaboradoresByEmpresa(Long empresaId) {
-        return colaboradorRepository.findByEmpresaId(empresaId).stream()
+    public List<ColaboradorDTO> getColaboradoresByEmpresa(Long empresaId, String token) {
+        Usuario usuario = getUsuarioFromToken(token);
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa con ID " + empresaId + " no encontrada"));
+        if (!empresa.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para acceder a esta empresa");
+        }
+        return colaboradorRepository.findByUsuarioAndEmpresaId(usuario, empresaId)
+                .stream()
                 .map(this::convertToDTO)
                 .toList();
     }
 
-    public Colaborador getColaboradorById(Long id) {
-        return colaboradorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Colaborador con ID " + id + " no encontrado"));
-    }
-
-    // Actualizar un colaborador
-    @Transactional
-    public Colaborador updateColaborador(Long id, ColaboradorDTO colaboradorDTO, MultipartFile file) throws IOException {
-        // Buscar colaborador existente
+    public Colaborador getColaboradorById(Long id, String token) {
+        Usuario usuario = getUsuarioFromToken(token);
         Colaborador colaborador = colaboradorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Colaborador con ID " + id + " no encontrado"));
+        if (!colaborador.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para acceder a este colaborador");
+        }
+        return colaborador;
+    }
 
-        // Validar existencia de empresa
+    @Transactional
+    public Colaborador updateColaborador(Long id, ColaboradorDTO colaboradorDTO, MultipartFile file, String token) throws IOException {
+        Usuario usuario = getUsuarioFromToken(token);
+        Colaborador colaborador = colaboradorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Colaborador con ID " + id + " no encontrado"));
+        if (!colaborador.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para modificar este colaborador");
+        }
+
         Empresa nuevaEmpresa = empresaRepository.findById(colaboradorDTO.getEmpresaId())
-                .orElseThrow(() -> new RuntimeException("Empresa con ID " + colaboradorDTO.getEmpresaId() + " no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa con ID " + colaboradorDTO.getEmpresaId() + " no encontrada"));
+        if (!nuevaEmpresa.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para asignar esta empresa");
+        }
 
-        // Validar duplicados (excepto si es el mismo usuario)
-        colaboradorRepository.findByEmail(colaboradorDTO.getEmail())
+        colaboradorRepository.findByUsuarioAndEmail(usuario, colaboradorDTO.getEmail())
                 .filter(c -> !c.getId().equals(id))
                 .ifPresent(c -> {
                     throw new IllegalArgumentException("Ya existe un colaborador con el email: " + colaboradorDTO.getEmail());
                 });
 
-        colaboradorRepository.findByDni(colaboradorDTO.getDni())
+        colaboradorRepository.findByUsuarioAndDni(usuario, colaboradorDTO.getDni())
                 .filter(c -> !c.getId().equals(id))
                 .ifPresent(c -> {
                     throw new IllegalArgumentException("Ya existe un colaborador con el DNI: " + colaboradorDTO.getDni());
                 });
 
-        colaboradorRepository.findByNombreAndApellido(colaboradorDTO.getNombre(), colaboradorDTO.getApellido())
+        colaboradorRepository.findByUsuarioAndNombreAndApellido(usuario, colaboradorDTO.getNombre(), colaboradorDTO.getApellido())
                 .filter(c -> !c.getId().equals(id))
                 .ifPresent(c -> {
                     throw new IllegalArgumentException("Ya existe un colaborador con el nombre y apellido: "
                             + colaboradorDTO.getNombre() + " " + colaboradorDTO.getApellido());
                 });
 
-        // Actualizar datos
         colaborador.setNombre(colaboradorDTO.getNombre());
         colaborador.setApellido(colaboradorDTO.getApellido());
         colaborador.setDni(colaboradorDTO.getDni());
@@ -147,29 +189,25 @@ public class ColaboradorService {
         colaborador.setEmail(colaboradorDTO.getEmail());
         colaborador.setEmpresa(nuevaEmpresa);
         colaborador.setHabilitado(colaboradorDTO.isHabilitado());
-        // Nuevos atributos
         colaborador.setFechaNacimiento(colaboradorDTO.getFechaNacimiento());
 
-        // Actualizar puesto si se proporciona puestoId
         if (colaboradorDTO.getPuestoId() != null) {
             Puesto puesto = puestoRepository.findById(colaboradorDTO.getPuestoId())
-                    .orElseThrow(() -> new RuntimeException("Puesto con ID " + colaboradorDTO.getPuestoId() + " no encontrado"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Puesto con ID " + colaboradorDTO.getPuestoId() + " no encontrado"));
+            if (!puesto.getUsuario().getId().equals(usuario.getId())) {
+                throw new ResourceNotFoundException("No tienes permiso para asignar este puesto");
+            }
             colaborador.setPuesto(puesto);
         } else {
-            colaborador.setPuesto(null); // Permitir quitar el puesto si puestoId es null
+            colaborador.setPuesto(null);
         }
 
-        // Manejo de imagen (si se proporciona)
         if (file != null && !file.isEmpty()) {
             validarImagen(file);
-
-            // Eliminar imagen anterior en Cloudinary (si existía)
             if (colaborador.getFotoUrl() != null) {
                 String publicId = getPublicIdFromUrl(colaborador.getFotoUrl());
                 cloudinaryService.deleteImage(publicId);
             }
-
-            // Subir nueva imagen a Cloudinary
             String imageUrl = cloudinaryService.uploadImage(file);
             colaborador.setFotoUrl(imageUrl);
         }
@@ -177,35 +215,41 @@ public class ColaboradorService {
         return colaboradorRepository.save(colaborador);
     }
 
-    // Extrae el public_id de la URL de Cloudinary (sin cambios)
     private String getPublicIdFromUrl(String imageUrl) {
         return imageUrl.substring(imageUrl.lastIndexOf("/") + 1, imageUrl.lastIndexOf("."));
     }
 
-    // Eliminar un colaborador (sin cambios)
-    public void deleteColaborador(Long id) {
+    @Transactional
+    public void deleteColaborador(Long id, String token) {
+        Usuario usuario = getUsuarioFromToken(token);
         Colaborador colaborador = colaboradorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Colaborador con ID " + id + " no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Colaborador con ID " + id + " no encontrado"));
+        if (!colaborador.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para eliminar este colaborador");
+        }
         colaboradorRepository.delete(colaborador);
     }
 
-    // Cambiar estado de habilitación (sin cambios)
     @Transactional
-    public Colaborador toggleHabilitacionColaborador(Long id, boolean habilitado) {
+    public Colaborador toggleHabilitacionColaborador(Long id, boolean habilitado, String token) {
+        Usuario usuario = getUsuarioFromToken(token);
         Colaborador colaborador = colaboradorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Colaborador con ID " + id + " no encontrado"));
+        if (!colaborador.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para modificar este colaborador");
+        }
         colaborador.setHabilitado(habilitado);
         return colaboradorRepository.save(colaborador);
     }
 
-    // Obtener colaboradores por habilitación (sin cambios en la lógica, solo en el DTO)
-    public List<ColaboradorDTO> getColaboradoresPorHabilitacion(boolean habilitado) {
-        return colaboradorRepository.findByHabilitado(habilitado).stream()
+    public List<ColaboradorDTO> getColaboradoresPorHabilitacion(boolean habilitado, String token) {
+        Usuario usuario = getUsuarioFromToken(token);
+        return colaboradorRepository.findByUsuarioAndHabilitado(usuario, habilitado)
+                .stream()
                 .map(this::convertToDTO)
                 .toList();
     }
 
-    // Convertir Colaborador a ColaboradorDTO
     public ColaboradorDTO convertToDTO(Colaborador colaborador) {
         return new ColaboradorDTO(
                 colaborador.getId(),

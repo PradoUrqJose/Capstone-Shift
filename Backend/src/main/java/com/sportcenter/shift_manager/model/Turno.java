@@ -33,6 +33,11 @@ public class Turno {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Tienda tienda;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Usuario usuario;
+
     @Transient
     private double horasTrabajadas;
 
