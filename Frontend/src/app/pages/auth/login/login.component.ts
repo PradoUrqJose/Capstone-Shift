@@ -51,7 +51,7 @@ export class LoginComponent {
       error: (err) => {
         console.error('🚨 Error de login:', err);
         console.error('🚨 Mensaje de error:', err.message);
-        Notiflix.Notify.failure(err.message || 'Error al iniciar sesión');
+        Notiflix.Notify.failure('Error al iniciar sesión');
       },
       complete: () => console.log('🏁 Suscripción completada')
     });
