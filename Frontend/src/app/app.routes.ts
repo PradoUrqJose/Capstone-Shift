@@ -9,15 +9,19 @@ import { TurnosFeriadosComponent } from './pages/reportes/turnos-feriados/turnos
 import { SemanaNormalComponent } from './pages/reportes/semana-normal/semana-normal.component';
 import { ColaboradorProfileComponent } from './pages/reportes/colaborador-profile/colaborador-profile.component';
 import GestionarPuestosComponent from './pages/colaboradores/gestionar-puestos/gestionar-puestos.component';
+import { LoginComponent } from './pages/auth/login/login.component';
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: 'empresas', component: EmpresasComponent },
-  { path: 'colaboradores', component: ColaboradoresComponent },
-  { path: 'puestos', component: GestionarPuestosComponent},
-  { path: 'turnos', component: TurnosComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'empresas', component: EmpresasComponent, canActivate: [AuthGuard] },
+  { path: 'colaboradores', component: ColaboradoresComponent, canActivate: [AuthGuard] },
+  { path: 'puestos', component: GestionarPuestosComponent, canActivate: [AuthGuard] },
+  { path: 'turnos', component: TurnosComponent, canActivate: [AuthGuard] },
   {
     path: 'reportes',
     component: ReportesComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: 'horas-trabajadas', component: HorasTrabajadasComponent },
       { path: 'colaborador-profile/:id', component: ColaboradorProfileComponent },
@@ -25,6 +29,7 @@ export const routes: Routes = [
       { path: 'semana-normal', component: SemanaNormalComponent },
       { path: '', redirectTo: 'horas-trabajadas', pathMatch: 'full' }
     ]
-  }, { path: '', redirectTo: 'turnos', pathMatch: 'full' },
-  { path: '**', redirectTo: 'empresas' }
+  },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '**', redirectTo: 'login' }
 ];

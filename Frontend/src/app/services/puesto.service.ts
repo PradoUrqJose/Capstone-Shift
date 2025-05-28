@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface Puesto {
@@ -10,7 +11,7 @@ export interface Puesto {
 }
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class PuestoService {
   private apiUrl = `${environment.apiUrl}/puestos`;
@@ -20,7 +21,7 @@ export class PuestoService {
   getPuestos(): Observable<Puesto[]> {
     return this.http.get<Puesto[]>(this.apiUrl).pipe(
       catchError(err => {
-        return throwError(() => new Error('No se pudieron cargar los puestos'));
+        return throwError(() => new Error(err.error?.message || 'No se pudieron cargar los puestos'));
       })
     );
   }
@@ -28,7 +29,7 @@ export class PuestoService {
   getPuestoById(id: number): Observable<Puesto> {
     return this.http.get<Puesto>(`${this.apiUrl}/${id}`).pipe(
       catchError(err => {
-        return throwError(() => new Error('Puesto no encontrado'));
+        return throwError(() => new Error(err.error?.message || 'Puesto no encontrado'));
       })
     );
   }
@@ -36,7 +37,7 @@ export class PuestoService {
   addPuesto(puesto: Puesto): Observable<Puesto> {
     return this.http.post<Puesto>(this.apiUrl, puesto).pipe(
       catchError(err => {
-        return throwError(() => new Error(err.error || 'Error al agregar el puesto'));
+        return throwError(() => new Error(err.error?.message || 'Error al agregar el puesto'));
       })
     );
   }
@@ -44,7 +45,7 @@ export class PuestoService {
   updatePuesto(id: number, puesto: Puesto): Observable<Puesto> {
     return this.http.put<Puesto>(`${this.apiUrl}/${id}`, puesto).pipe(
       catchError(err => {
-        return throwError(() => new Error(err.error || 'Error al actualizar el puesto'));
+        return throwError(() => new Error(err.error?.message || 'Error al actualizar el puesto'));
       })
     );
   }
@@ -52,7 +53,7 @@ export class PuestoService {
   deletePuesto(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       catchError(err => {
-        return throwError(() => new Error('Error al eliminar el puesto'));
+        return throwError(() => new Error(err.error?.message || 'Error al eliminar el puesto'));
       })
     );
   }

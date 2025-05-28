@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface Colaborador {
@@ -14,13 +15,13 @@ export interface Colaborador {
   empresaNombre: string;
   fotoUrl?: string;
   habilitado: boolean;
-  fechaNacimiento?: string; // Usamos string porque JSON serializa LocalDate como "YYYY-MM-DD"
-  puestoId?: number;        // ID del puesto asignado
-  puestoNombre?: string;    // Nombre del puesto
+  fechaNacimiento?: string;
+  puestoId?: number;
+  puestoNombre?: string;
 }
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class ColaboradorService {
   private apiUrl = `${environment.apiUrl}/colaboradores`;
@@ -28,69 +29,80 @@ export class ColaboradorService {
   constructor(private http: HttpClient) {}
 
   getColaboradores(): Observable<Colaborador[]> {
-    return this.http.get<Colaborador[]>(this.apiUrl);
+    return this.http.get<Colaborador[]>(this.apiUrl).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'No se pudieron cargar los colaboradores'));
+      })
+    );
   }
 
   getColaboradoresByEmpresa(empresaId: number): Observable<Colaborador[]> {
-    return this.http.get<Colaborador[]>(`${this.apiUrl}/empresa/${empresaId}`);
+    return this.http.get<Colaborador[]>(`${this.apiUrl}/empresa/${empresaId}`).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'No se pudieron cargar los colaboradores'));
+      })
+    );
   }
 
-  addColaborador(
-    colaborador: Colaborador,
-    file?: File
-  ): Observable<Colaborador> {
+  addColaborador(colaborador: Colaborador, file?: File): Observable<Colaborador> {
     const formData = new FormData();
-    formData.append(
-      'colaborador',
-      new Blob([JSON.stringify(colaborador)], { type: 'application/json' })
-    );
+    formData.append('colaborador', new Blob([JSON.stringify(colaborador)], { type: 'application/json' }));
     if (file) {
-      formData.append('file', file); // Añade el archivo si está presente
+      formData.append('file', file);
     }
-    return this.http.post<Colaborador>(this.apiUrl, formData);
+    return this.http.post<Colaborador>(this.apiUrl, formData).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'Error al agregar el colaborador'));
+      })
+    );
   }
 
-  updateColaborador(
-    id: number,
-    colaborador: Colaborador,
-    file?: File
-  ): Observable<Colaborador> {
+  updateColaborador(id: number, colaborador: Colaborador, file?: File): Observable<Colaborador> {
     const formData = new FormData();
-    formData.append(
-      'colaborador',
-      new Blob([JSON.stringify(colaborador)], { type: 'application/json' })
-    );
+    formData.append('colaborador', new Blob([JSON.stringify(colaborador)], { type: 'application/json' }));
     if (file) {
-      formData.append('file', file); // Añade el archivo si está presente
+      formData.append('file', file);
     }
-    return this.http.put<Colaborador>(`${this.apiUrl}/${id}`, formData);
+    return this.http.put<Colaborador>(`${this.apiUrl}/${id}`, formData).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'Error al actualizar el colaborador'));
+      })
+    );
   }
 
   deleteColaborador(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
-  }
-
-  toggleHabilitacion(id: number, habilitado: boolean): Observable<Colaborador> {
-    return this.http.put<Colaborador>(
-      `${this.apiUrl}/${id}/habilitacion`,
-      null,
-      {
-        params: { habilitado: habilitado.toString() },
-      }
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'Error al eliminar el colaborador'));
+      })
     );
   }
 
-  getColaboradoresPorHabilitacion(
-    habilitado: boolean
-  ): Observable<Colaborador[]> {
+  toggleHabilitacion(id: number, habilitado: boolean): Observable<Colaborador> {
+    return this.http.put<Colaborador>(`${this.apiUrl}/${id}/habilitacion`, null, {
+      params: { habilitado: habilitado.toString() }
+    }).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'Error al cambiar la habilitación'));
+      })
+    );
+  }
+
+  getColaboradoresPorHabilitacion(habilitado: boolean): Observable<Colaborador[]> {
     return this.http.get<Colaborador[]>(`${this.apiUrl}/filtro`, {
-      params: { habilitado: habilitado.toString() },
-    });
+      params: { habilitado: habilitado.toString() }
+    }).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'No se pudieron cargar los colaboradores'));
+      })
+    );
   }
 
-  // Método añadido para obtener un colaborador por ID
   getColaboradorById(id: number): Observable<Colaborador> {
-    return this.http.get<Colaborador>(`${this.apiUrl}/${id}`);
+    return this.http.get<Colaborador>(`${this.apiUrl}/${id}`).pipe(
+      catchError(err => {
+        return throwError(() => new Error(err.error?.message || 'Colaborador no encontrado'));
+      })
+    );
   }
-
 }

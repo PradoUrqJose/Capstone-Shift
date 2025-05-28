@@ -53,13 +53,14 @@ export class TurnoService {
 
   constructor(private http: HttpClient) { }
 
+
   getTurnosPorSemana(fecha: Date): Observable<Turno[]> {
     const formattedDate = format(fecha, 'yyyy-MM-dd');
     return this.http.get<Turno[]>(`${this.apiUrl}?fecha=${formattedDate}`).pipe(
-      tap((turnos) => console.log('🔄 Turnos recibidos del backend por Semana:', turnos)), // Debugging
-      catchError((error) => {
-        console.error('❌ Error al obtener turnos:', error);
-        return throwError(() => new Error('No se pudieron cargar los turnos. Intente más tarde.'));
+      tap(turnos => console.log('🔄 Turnos recibidos del backend por Semana:', turnos)),
+      catchError(err => {
+        console.error('❌ Error al obtener turnos:', err);
+        return throwError(() => new Error(err.error?.message || 'No se pudieron cargar los turnos'));
       })
     );
   }
@@ -223,24 +224,26 @@ export class TurnoService {
  */
   getResumenMensual(mes: number, anio: number, colaboradoresIds?: number[]): Observable<ResumenMensual[]> {
     let url = `${this.apiUrl}/resumen-mensual?mes=${mes}&anio=${anio}`;
-
-    // Si se proporcionan IDs de colaboradores, añadirlos como parámetro
     if (colaboradoresIds && colaboradoresIds.length > 0) {
       const colaboradoresParam = colaboradoresIds.join(',');
       url += `&colaboradores=${colaboradoresParam}`;
     }
-
     return this.http.get<ResumenMensual[]>(url).pipe(
-      tap((resumenes) => console.log('📊 Resumen mensual recibido:', resumenes)),
-      catchError((error) => {
-        console.error('❌ Error al obtener el resumen mensual:', error);
-        return throwError(() => new Error('No se pudo cargar el resumen mensual. Intente más tarde.'));
+      tap(resumenes => console.log('📊 Resumen mensual recibido:', resumenes)),
+      catchError(err => {
+        console.error('❌ Error al obtener el resumen mensual:', err);
+        return throwError(() => new Error(err.error?.message || 'No se pudo cargar el resumen mensual'));
       })
     );
   }
 
-    // Método existente que ya tienes
-    getTurnosByColaboradorId(id: number): Observable<any[]> {
-      return this.http.get<any[]>(`${this.apiUrl}/${id}`);
-    }
+  // Método existente que ya tienes
+  getTurnosByColaboradorId(id: number): Observable<Turno[]> {
+    return this.http.get<Turno[]>(`${this.apiUrl}/${id}`).pipe(
+      catchError(err => {
+        console.error('Error al obtener turnos por colaborador:', err);
+        return throwError(() => new Error(err.error?.message || 'No se pudieron cargar los turnos'));
+      })
+    );
+  }
 }
