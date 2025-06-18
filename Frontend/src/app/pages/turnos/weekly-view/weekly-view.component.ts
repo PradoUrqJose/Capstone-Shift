@@ -70,6 +70,7 @@ export class WeeklyViewComponent implements OnInit {
   // Outputs para emitir eventos al componente padre
   @Output() abrirModal = new EventEmitter<{ colaboradorId: number; fecha: string }>();
   @Output() abrirModalEdicion = new EventEmitter<Turno>();
+  @Output() abrirModalTurnosMasa = new EventEmitter<number>();
 
   showFilterDropdown: boolean = false; // Controlar visibilidad del flotante
   // Estado para ordenar y filtrar
@@ -77,6 +78,10 @@ export class WeeklyViewComponent implements OnInit {
   selectedCompany: string = 'all'; // Empresa seleccionada para filtrar ('all' para mostrar todas)
   filteredColaboradores: Colaborador[] = []; // Lista filtrada y ordenada
 
+  emitirModalTurnosMasa(colaboradorId: number): void {
+    console.log("Abierto MODAL EN MASA");
+    this.abrirModalTurnosMasa.emit(colaboradorId); // Emitimos el ID del colaborador
+  }
   // Método para obtener el turno de un colaborador en una fecha específica
   obtenerTurno(
     turnos: Turno[] | null,

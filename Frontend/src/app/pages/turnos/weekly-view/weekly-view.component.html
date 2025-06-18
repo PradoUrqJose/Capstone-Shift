@@ -4,27 +4,28 @@
       <th class="bg-blue-50 text-center px-2 py-4 colaborador-column w-[100%]">
         <div class="w-full flex justify-around items-center">
           <!-- Botón de ordenamiento -->
-          <button (click)="toggleSortByCompany()" class="text-blue-200 hover:text-blue-300 transition p-1" title="Ordenar por empresa">
+          <button (click)="toggleSortByCompany()" class="text-blue-200 hover:text-blue-300 transition p-1"
+            title="Ordenar por empresa">
             <i class="fa-solid fa-sort text-sm" [ngClass]="{'text-blue-700': sortByCompany}"></i>
           </button>
           <!-- Encabezado -->
           <span>Colaborador</span>
           <!-- Botón de filtro con flotante -->
           <div class="relative">
-            <button (click)="toggleFilterDropdown()" class="text-blue-200 hover:text-blue-300 transition p-1" title="Filtrar por empresa">
+            <button (click)="toggleFilterDropdown()" class="text-blue-200 hover:text-blue-300 transition p-1"
+              title="Filtrar por empresa">
               <i class="fa-solid fa-filter text-sm"></i>
             </button>
             <div *ngIf="showFilterDropdown"
-            class="absolute left-0 top-full mt-2 w-60 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
-            [ngStyle]="{ 'left': filterDropdownPosition.x + 'px', 'top': filterDropdownPosition.y + 'px' }">
-            <ul class="py-1">
-              <li *ngFor="let empresa of empresas"
-                (click)="filterByCompany(empresa)"
-                class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left">
-                {{ empresa === 'all' ? 'Todas las empresas' : empresa }}
-              </li>
-            </ul>
-          </div>
+              class="absolute left-0 top-full mt-2 w-60 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+              [ngStyle]="{ 'left': filterDropdownPosition.x + 'px', 'top': filterDropdownPosition.y + 'px' }">
+              <ul class="py-1">
+                <li *ngFor="let empresa of empresas" (click)="filterByCompany(empresa)"
+                  class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left">
+                  {{ empresa === 'all' ? 'Todas las empresas' : empresa }}
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </th>
@@ -46,11 +47,12 @@
     <ng-container *ngIf="filteredColaboradores as colaboradores">
       <tr *ngFor="let colaborador of colaboradores" class="hover:bg-gray-50 transition">
         <!-- Columna de colaborador -->
-        <td class="py-4 px-4 flex justify-start items-center gap-3 w-full">
+        <td class="py-4 px-4 flex justify-start items-center gap-3 w-full relative group">
           <div (click)="viewProfile(colaborador.id)"
-          class="hover-photo relative cursor-pointer photo flex items-center justify-center w-12 h-12 rounded-full bg-gray-200">
-          <img [src]="colaborador.fotoUrl || 'assets/user-circle-svgrepo-com.svg'" alt="Foto de perfil" class="w-12 h-12 rounded-full object-cover object-center">
-        </div>
+            class="hover-photo relative cursor-pointer photo flex items-center justify-center w-12 h-12 rounded-full bg-gray-200">
+            <img [src]="colaborador.fotoUrl || 'assets/user-circle-svgrepo-com.svg'" alt="Foto de perfil"
+              class="w-12 h-12 rounded-full object-cover object-center">
+          </div>
           <div class="colaborador">
             <div class="colaborador-nombre text-sm font-bold">
               {{ colaborador.nombre }} {{ colaborador.apellido }}
@@ -59,6 +61,12 @@
               {{ colaborador.empresaNombre }}
             </div>
           </div>
+          <!-- Botón de hover para abrir el modal de turnos en masa -->
+          <button
+            class="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-blue-500 hover:text-blue-700"
+            (click)="emitirModalTurnosMasa(colaborador.id)" title="Asignar turnos en masa">
+            <i class="fa-solid fa-calendar-plus"></i>
+          </button>
         </td>
 
         <!-- Celdas de los días de la semana -->
@@ -70,13 +78,13 @@
             <ng-container *ngIf="turnos as turnos">
               <ng-container *ngIf="obtenerTurno(turnos, colaborador.id, dia.fecha) as turno; else agregarBoton">
                 <!-- Turno existente -->
-                <div class="container-green cursor-pointer transition border-green-100 p-2 rounded-lg m-auto text-center"
+                <div
+                  class="container-green cursor-pointer transition border-green-100 p-2 rounded-lg m-auto text-center"
                   [ngClass]="{
                     'almuerzo-tomado': turno.tomoAlmuerzo,
                     'border-2 border-red-500': esFeriado(dia.fecha),
                     'midHours': (turno.horasTrabajadas ?? 0) > 8
-                  }"
-                  [attr.data-horas-trabajadas]="formatearHorasDia(turno.horasTrabajadas)"
+                  }" [attr.data-horas-trabajadas]="formatearHorasDia(turno.horasTrabajadas)"
                   [attr.data-tienda]="turno.nombreTienda" (click)="abrirModalEdicion.emit(turno)">
                   {{ formatearHora(turno.horaEntrada) }} - {{ formatearHora(turno.horaSalida) }}
                 </div>
@@ -96,7 +104,8 @@
           <ng-template #emptyCell></ng-template>
         </td>
         <!-- Columna de total de horas -->
-        <td [ngClass]="{'hidden': hideTotal, 'text-red-500': horasTotalesSemana[colaborador.id] > 48}" class="p-2 text-center font-bold semana-column relative">
+        <td [ngClass]="{'hidden': hideTotal, 'text-red-500': horasTotalesSemana[colaborador.id] > 48}"
+          class="p-2 text-center font-bold semana-column relative">
           <div class="flex items-center justify-center">
             <span>{{ getHorasTotalesSemanaFormateadas(colaborador.id) }}</span>
             <ng-container *ngIf="tieneTurnosFeriados(colaborador.id)">

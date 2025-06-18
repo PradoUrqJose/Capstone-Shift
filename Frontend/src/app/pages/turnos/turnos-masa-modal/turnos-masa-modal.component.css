@@ -1,0 +1,76 @@
+/* turnos-masa-modal.component.css */
+
+/* Calendario visual al estilo moderno */
+app-calendar-multiselect {
+  display: block;
+  font-family: 'Inter', sans-serif;
+}
+
+.calendar-container {
+  border-radius: 1rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  max-width: 320px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: 500;
+  color: #999;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.calendar-cell {
+  width: 2.25rem;
+  height: 2.25rem;
+  line-height: 2.25rem;
+  border-radius: 50%;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.2s ease-in-out;
+}
+
+.calendar-cell:hover {
+  background-color: #eef2ff;
+}
+
+.calendar-cell.selected {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.calendar-cell.today {
+  border: 2px solid #3b82f6;
+}
+
+button {
+  font-weight: 600;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

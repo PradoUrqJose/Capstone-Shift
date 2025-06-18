@@ -29,7 +29,7 @@ import {
 import { es } from 'date-fns/locale'; // Importación de la localización para español
 
 // -------------- RxJS Imports --------------
-import { BehaviorSubject, map, Observable, of, Subscription, tap} from 'rxjs';
+import { BehaviorSubject, map, Observable, of, Subscription, tap } from 'rxjs';
 
 // -------------- Angular Modules Imports --------------
 import { CommonModule } from '@angular/common';
@@ -49,13 +49,14 @@ import { WeeklyViewComponent } from './weekly-view/weekly-view.component';
 import { MonthlyViewComponent } from './monthly-view/monthly-view.component';
 
 import { TurnoModalComponent } from './turno-modal/turno-modal.component'; // Nuevo componente
+import { TurnosMasaModalComponent } from './turnos-masa-modal/turnos-masa-modal.component';
 
 @Component({
   selector: 'app-turnos',
   templateUrl: './turnos.component.html',
   standalone: true,
   styleUrls: ['./turnos.component.css'],
-  imports: [CommonModule, FormsModule, HeaderComponent, WeeklyViewComponent, MonthlyViewComponent, TurnoModalComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, WeeklyViewComponent, MonthlyViewComponent, TurnoModalComponent, TurnosMasaModalComponent ],
 })
 export default class TurnosComponent implements OnInit, AfterViewChecked {
   //! Variables de estado
@@ -105,6 +106,12 @@ export default class TurnosComponent implements OnInit, AfterViewChecked {
   // Nuevas propiedades para mes y año
   mes: number = 0;
   anio: number = 0;
+
+  // Variables para el modal de turnos en masa
+  mostrarModalTurnosMasa: boolean = false;
+  isModalTurnosMasaVisible: boolean = false;
+  colaboradorSeleccionadoParaMasa: number | null = null;
+
   @Output() turnosModificados = new EventEmitter<void>(); // Nuevo evento para notificar cambios
 
   private turnosSubscription?: Subscription;
@@ -514,5 +521,19 @@ export default class TurnosComponent implements OnInit, AfterViewChecked {
   ): Turno | undefined {
     if (!turnos) return undefined; // Manejo de null
     return this.turnoService.obtenerTurno(turnos, colaboradorId, fecha) || undefined;
+  }
+
+  abrirModalTurnosMasa(colaboradorId: number): void {
+    this.colaboradorSeleccionadoParaMasa = colaboradorId;
+    this.mostrarModalTurnosMasa = true;
+    setTimeout(() => this.isModalTurnosMasaVisible = true, 50);
+  }
+
+  cerrarModalTurnosMasa(): void {
+    this.isModalTurnosMasaVisible = false;
+    setTimeout(() => {
+      this.mostrarModalTurnosMasa = false;
+      this.colaboradorSeleccionadoParaMasa = null;
+    }, 50);
   }
 }

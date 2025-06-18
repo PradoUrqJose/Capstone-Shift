@@ -1,0 +1,37 @@
+<div class="p-6 border border-gray-200 rounded-2xl shadow-md space-y-4 quicksand font-medium">
+  <!-- Encabezado con navegación -->
+  <div class="flex justify-between items-center mb-2 pl-3">
+    <span class="text-2xl font-extrabold text-black quicksand">{{ nombreMes }}</span>
+    <div class="flex items-center space-x-8">
+      <button (click)="anteriorMes()" class="text-gray-500 hover:underline text-2xl"><i
+          class="fa-solid fa-angle-left"></i>
+      </button>
+      <button (click)="siguienteMes()" class="text-gray-500 hover:underline text-2xl"><i
+          class="fa-solid fa-angle-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Días de la semana -->
+  <div class="grid grid-cols-7 text-center text-sm text-gray-500 font-medium">
+    <div *ngFor="let dia of diasSemana">{{ dia }}</div>
+  </div>
+
+  <!-- Celdas de los días -->
+  <div class="grid grid-cols-7 gap-x-0 gap-y-1">
+    <ng-container *ngFor="let _ of [].constructor(startWeekdayOffset)">
+      <div></div>
+    </ng-container>
+
+    <ng-container *ngFor="let day of daysInMonth">
+      <button (click)="toggleDate(day)" [ngClass]="{
+        'bg-blue-500 text-white': isSelected(day),
+        'bg-red-100 text-red-600 font-semibold': isFeriado(day) && !isSelected(day),
+        'text-yellow-800 font-bold': isFeriado(day) && isSelected(day),
+        'hover:bg-blue-100': !isSelected(day)
+      }" class="w-8 aspect-square rounded-full text-xs flex items-center justify-center transition duration-150">
+        {{ day.getDate() }}
+      </button>
+    </ng-container>
+  </div>
+</div>

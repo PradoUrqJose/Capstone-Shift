@@ -27,6 +27,14 @@ export interface Turno {
   horasTotalesSemana?: number;
 }
 
+export interface TurnoMasaPayload {
+  colaboradorId: number;
+  tiendaId: number;
+  fechas: string[];
+  horaInicio: string;
+  horaFin: string;
+}
+
 export interface TurnoPayload {
   colaborador: { id: number | undefined };
   fecha: string;
@@ -243,6 +251,15 @@ export class TurnoService {
       catchError(err => {
         console.error('Error al obtener turnos por colaborador:', err);
         return throwError(() => new Error(err.error?.message || 'No se pudieron cargar los turnos'));
+      })
+    );
+  }
+
+  crearTurnosMasa(payload: TurnoMasaPayload): Observable<any> {
+    return this.http.post(`${this.apiUrl}/masa`, payload).pipe(
+      catchError((error) => {
+        console.error('Error al crear turnos en masa:', error);
+        return throwError(() => new Error(error.error?.message || 'Error al crear turnos en masa'));
       })
     );
   }
