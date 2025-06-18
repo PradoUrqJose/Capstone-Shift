@@ -33,4 +33,5 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
             LocalDate fechaInicio,
             LocalDate fechaFin);
     List<Turno> findByUsuarioAndColaborador_IdInAndFechaBetween(Usuario usuario, List<Long> colaboradores, LocalDate inicio, LocalDate fin);
+    List<Turno> findByUsuarioAndColaborador_IdAndFechaIn(Usuario usuario, Long colaboradorId, List<LocalDate> fechas);
 }

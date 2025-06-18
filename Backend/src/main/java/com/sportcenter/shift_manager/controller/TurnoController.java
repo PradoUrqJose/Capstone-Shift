@@ -2,6 +2,7 @@ package com.sportcenter.shift_manager.controller;
 
 import com.sportcenter.shift_manager.dto.ResumenMensualDTO;
 import com.sportcenter.shift_manager.dto.TurnoDTO;
+import com.sportcenter.shift_manager.dto.TurnoMasaDTO;
 import com.sportcenter.shift_manager.model.Turno;
 import com.sportcenter.shift_manager.service.TurnoService;
 import jakarta.validation.Valid;
@@ -26,6 +27,14 @@ public class TurnoController {
                                               @RequestHeader("Authorization") String token) {
         TurnoDTO savedTurno = turnoService.saveTurno(turno, token);
         return ResponseEntity.ok(savedTurno);
+    }
+
+    @PostMapping("/masa")
+    public ResponseEntity<List<TurnoDTO>> crearTurnosMasa(
+            @Valid @RequestBody TurnoMasaDTO dto,
+            @RequestHeader("Authorization") String token) {
+        List<TurnoDTO> turnosCreados = turnoService.crearTurnosMasa(dto, token);
+        return ResponseEntity.ok(turnosCreados);
     }
 
     @GetMapping("/{colaboradorId}")

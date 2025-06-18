@@ -3,6 +3,7 @@ package com.sportcenter.shift_manager.service;
 import com.sportcenter.shift_manager.config.JwtUtil;
 import com.sportcenter.shift_manager.dto.ResumenMensualDTO;
 import com.sportcenter.shift_manager.dto.TurnoDTO;
+import com.sportcenter.shift_manager.dto.TurnoMasaDTO;
 import com.sportcenter.shift_manager.exception.ResourceNotFoundException;
 import com.sportcenter.shift_manager.model.Colaborador;
 import com.sportcenter.shift_manager.model.Empresa;
@@ -520,5 +521,79 @@ public class TurnoService {
                 0.0,
                 esFeriado
         );
+    }
+
+    @Transactional
+    public List<TurnoDTO> crearTurnosMasa(TurnoMasaDTO dto, String token) {
+        // Obtener el usuario autenticado
+        Usuario usuario = getUsuarioFromToken(token);
+
+        // Validaciones básicas
+        if (dto.getColaboradorId() == null || dto.getTiendaId() == null || dto.getFechas() == null || dto.getFechas().isEmpty() ||
+                dto.getHoraInicio() == null || dto.getHoraFin() == null) {
+            throw new IllegalArgumentException("Todos los campos son obligatorios: colaborador, tienda, fechas y horarios");
+        }
+        if (!dto.getHoraFin().isAfter(dto.getHoraInicio())) {
+            throw new IllegalArgumentException("La hora de salida debe ser posterior a la hora de entrada");
+        }
+
+        // Obtener y validar el colaborador
+        Colaborador colaborador = colaboradorRepository.findById(dto.getColaboradorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Colaborador con ID " + dto.getColaboradorId() + " no encontrado"));
+        if (!colaborador.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para asignar este colaborador");
+        }
+        if (colaborador.getEmpresa() == null) {
+            throw new IllegalArgumentException("El colaborador no tiene una empresa asignada");
+        }
+        Empresa empresa = colaborador.getEmpresa();
+        if (!empresa.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para asignar esta empresa");
+        }
+
+        // Obtener y validar la tienda
+        Tienda tienda = tiendaRepository.findById(dto.getTiendaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tienda con ID " + dto.getTiendaId() + " no encontrada"));
+        if (!tienda.getUsuario().getId().equals(usuario.getId())) {
+            throw new ResourceNotFoundException("No tienes permiso para asignar esta tienda");
+        }
+
+        // Convertir las fechas de String a LocalDate
+        List<LocalDate> fechas = dto.getFechas().stream()
+                .map(LocalDate::parse)
+                .collect(Collectors.toList());
+
+        // Verificar conflictos con turnos existentes para el colaborador en las fechas dadas
+        List<Turno> turnosExistentes = turnoRepository.findByUsuarioAndColaborador_IdAndFechaBetween(
+                usuario, colaborador.getId(), fechas.get(0), fechas.get(fechas.size() - 1));
+        if (!turnosExistentes.isEmpty()) {
+            String fechasConflictivas = turnosExistentes.stream()
+                    .map(Turno::getFecha)
+                    .map(LocalDate::toString)
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Ya existen turnos para el colaborador en las fechas: " + fechasConflictivas);
+        }
+
+        // Crear los nuevos turnos
+        List<Turno> nuevosTurnos = fechas.stream().map(fecha -> {
+            Turno turno = new Turno();
+            turno.setColaborador(colaborador);
+            turno.setFecha(fecha);
+            turno.setHoraEntrada(dto.getHoraInicio());
+            turno.setHoraSalida(dto.getHoraFin());
+            turno.setEmpresa(empresa);
+            turno.setTienda(tienda);
+            turno.setUsuario(usuario);
+            turno.setEsFeriado(feriadoService.isFeriado(fecha));
+            return turno;
+        }).collect(Collectors.toList());
+
+        // Guardar todos los turnos en la base de datos
+        List<Turno> turnosGuardados = turnoRepository.saveAll(nuevosTurnos);
+
+        // Convertir a DTO y devolver
+        return turnosGuardados.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }
