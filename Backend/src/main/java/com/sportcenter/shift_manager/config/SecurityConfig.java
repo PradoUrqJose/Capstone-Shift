@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/swagger-ui/**", "/api-docs/**", "/api/ping").permitAll() // Permitir /api/ping sin autenticación
+                        .requestMatchers("/api/auth/**", "/swagger-ui/**", "/api-docs/**", "/api/keep-alive").permitAll() // Añadir /api/keep-alive
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
